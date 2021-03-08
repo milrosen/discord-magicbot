@@ -4,7 +4,6 @@ const fs = require('fs');
 
 const { MongoClient } = require('mongodb');
 const url = `mongodb+srv://milrosen:${process.env.MONGOPASS}@cluster0.vrxm7.mongodb.net/admin?retryWrites=true&w=majority`;
-console.log(url);
 const mongoClient = new MongoClient(url);
 
 async function run() {
