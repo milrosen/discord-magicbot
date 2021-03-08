@@ -1,0 +1,17 @@
+{
+	"fireball":  {
+		"description": "\"Only you can cause forest fires.\" - Smoky the Pro Arson Bear",
+		"damage": 10,
+		"cost": 10
+	},
+	"OwO": {
+		"description": "Hewwowo? Mistew Obama? Why has gwowod weft us?",
+		"damage": "psychological and spiritual",
+		"cost": 50 
+	},
+	"gun": {
+		"description": "not really a spell imho, but idk why more wizards arent strapped",
+		"damage": 100,
+		"cost": 20
+	}
+}
