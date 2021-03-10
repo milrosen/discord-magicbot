@@ -1,17 +1,93 @@
 const spellJSON = require('./info/spellinfo.json');
 
+const insertFromId = async (id, users) => {
+	const user = await users.findOne({
+		dsId: id
+	}, {});
+	const defaultUser = {
+		dsId: id,
+		health: 100,
+		mp: 0,
+		dead: false,
+	}
+
+	if (user) return user;
+
+	return users.insertOne(defaultUser);
+}
+
+const generateFunnyDeathMessage = (wizard, victim, method) => {
+	phrases = [
+		`and lo, the foul ${victim} was banishèd to the cringe-cavens by the gallant ${wizard}`,
+		`exclamation ${wizard}'s adjective ${method} death phrase`,
+		`bereft of options, ${victim} simply had to watch as ${wizard}'s adjective ${method} death phrase`
+	]
+
+	deathPhrases = [
+		`turned ${victim}'s innards into outers`,
+		`convinced ${victim} that they simply had too much health`,
+	]
+
+	adjectives = [
+		'very cool',
+		'poggers',
+		'unfathomably sexy',
+		'(honestly kinda cringe)',
+		'(kinda pathetic, but it feels weird to point out given the circumstances)'
+	]
+
+	exclamations = [
+		'Pogchamp,',
+		'Finally!',
+		`Unfortunately for ${victim},`
+	]
+
+	const randIndex = (length) => {
+		return Math.floor(Math.random() * length);
+	}
+
+	return phrases[randIndex(phrases.length)].replace(/adjective/g, adjectives[randIndex(adjectives.length)])
+		.replace(/death phrase/g, deathPhrases[randIndex(deathPhrases.length)])
+		.replace(/exclamation/g, exclamations[randIndex(exclamations.length)]);
+}
+
 module.exports = {
 	name: 'cast',
 	description: 'casts a spell',
-	execute(message, args) {
-		if (!args[0] in spellJSON || !args[0]) {
-			message.channel.send(`Hey! ${message.author.username}! Try casting a spell that exists nextime, wiseguy, use the \`!info\` command to see our availible spells, ok bub!`);
-			return;
+	async execute(message, args, db) {
+		//console.log(message.member.roles.cache);
+		const spellName = args[0];
+
+		if (!(spellName in spellJSON || !spellName)) return message.channel.send(`Hey! @${message.author.username} ! Try casting a spell that exists nextime, wiseguy, use the \`!info\` command to see our availible spells, ok bub!`);
+
+		const targetDs = message.mentions.users.first();
+		if (!targetDs || targetDs.bot) return message.reply(`you gotta target *someone*, mention them after the name of the spell, ok?`);
+
+		const users = db.collection('UserInfo');
+		const spell = spellJSON[spellName];
+		const caster = await insertFromId(message.author.id, users);
+		const target = await insertFromId(targetDs.id, users);
+
+		if (target.dead) return message.reply(`Stoooop.... nooooo he's already dead!1!!`);
+
+		if (caster.mp < spell.cost) return message.reply(`${spellName} costs ${spell.cost}mp and you only have ${caster.mp}mp. HAHA ***broke!***`);
+
+
+		if (target.hp < (typeof spell.damage === 'number' ? spell.damage : 0)) {
+			const updateDoc = {
+				$set: {
+					dead: true,
+					hp: 0,
+				}
+			}
+			await users.updateOne({
+				dsId: targetDs.id
+			}, updateDoc, {});
+			message.channel.send(generateFunnyDeathMessage(message.author.username, targetDs.username, spellName));
 		}
-		if (!args[1]) {
-			message.reply(`you gotta target someone, put their username after the name of the spell, ok?`);
-			return;
+		for (let i = 0; i < 100; i++) {
+			console.log(generateFunnyDeathMessage(message.author.username, targetDs.username, spellName));
 		}
-		message.reply(`casts ${args[0]} targeting ${args[1]}`);
+		message.reply(`casts ${spellName} targeting ${args[1]}`);
 	}
 }
