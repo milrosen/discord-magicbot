@@ -1,6 +1,4 @@
-const {
-	swapRoles
-} = require('../roleHelper.js');
+const {swapRoles} = require('../helperFunctions.js');
 const Discord = require('discord.js');
 
 module.exports = {

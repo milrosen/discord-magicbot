@@ -1,21 +1,5 @@
 const spellJSON = require('./info/spellinfo.json');
-const {swapRoles} = require('../roleHelper.js')
-
-const insertFromId = async (id, users) => {
-	const user = await users.findOne({
-		dsId: id
-	}, {});
-	const defaultUser = {
-		dsId: id,
-		hp: 100,
-		mp: 0,
-		dead: false,
-	}
-
-	if (user) return user;
-
-	return users.insertOne(defaultUser);
-}
+const {swapRoles, insertFromId} = require('../helperFunctions.js')
 
 const generateFunnyDeathMessage = (wizard, victim, method) => {
 	phrases = [
@@ -76,6 +60,15 @@ module.exports = {
 		const targetMember = message.mentions.members.first();
 
 		typeof spell.damage === 'number' ? spell.damage = spell.damage : spell.damage = 0;
+
+		const updateDocCaster = {
+			$set: {
+				mp: caster.mp - spell.cost,
+			}
+		}
+		await users.updateOne({
+			dsId: message.author.id
+		}, updateDocCaster, {});
 		
 		if (target.hp <= spell.damage) {
 			const updateDoc = {
@@ -91,12 +84,12 @@ module.exports = {
 			return message.channel.send(generateFunnyDeathMessage(message.author.username, targetDs.username, spellName));
 		}
 
-		colorRole = target.hp - spell.damage < 25 ? "Red"
+		colorRole = target.hp - spell.damage <=25 ? "Red"
 				  : target.hp - spell.damage <=50 ? "Yellow"
 				  : "Green";
 
 		swapRoles(targetMember, ["Red", "Yellow", "Green"], colorRole);
-		message.reply(`casts ${spellName} targeting ${args[1]}, they only have ${target.hp - spell.damage}hp`);
+		message.reply(`casts ${spellName} targeting ${args[1]}, they only have ${target.hp - spell.damage}hp you have ${caster.mp - spell.cost}mp`);
 
 		const updateDoc = {
 			$set: {

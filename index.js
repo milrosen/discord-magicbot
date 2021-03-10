@@ -1,4 +1,5 @@
 const dontenv = require('dotenv');
+const { insertFromId } = require('./helperFunctions.js');
 dontenv.config();
 const fs = require('fs');
 
@@ -37,6 +38,13 @@ disClient.login(process.env.TOKEN);
 
 disClient.on('message', message => {
 	const content = message.content;
+	if (message.channel.name === 'introductions') {
+		insertFromId(message.author.id, db.collection('UserInfo'));
+		let green = message.guild.roles.cache.find(r => r.name === "Green");
+		message.member.roles.add(green).catch(console.error);
+		message.delete();
+		return;
+	}
 	if (!content.startsWith('!') || message.author.bot) return;
 
 	const args = content.slice(1).trim().split(/ +/);
