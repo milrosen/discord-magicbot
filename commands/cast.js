@@ -74,8 +74,10 @@ module.exports = {
 		if (caster.mp < spell.cost) return message.reply(`${spellName} costs ${spell.cost}mp and you only have ${caster.mp}mp. HAHA ***broke!***`);
 
 		const targetMember = message.mentions.members.first();
+
+		typeof spell.damage === 'number' ? spell.damage = spell.damage : spell.damage = 0;
 		
-		if (typeof spell.damage === 'number' && target.hp <= spell.damage) {
+		if (target.hp <= spell.damage) {
 			const updateDoc = {
 				$set: {
 					dead: true,
@@ -86,9 +88,23 @@ module.exports = {
 				dsId: targetDs.id
 			}, updateDoc, {});
 			swapRoles(targetMember, ["Red", "Yellow", "Green"], "Dead");
-			return message.reply(generateFunnyDeathMessage(message.author.username, targetDs.username, spellName));
+			return message.channel.send(generateFunnyDeathMessage(message.author.username, targetDs.username, spellName));
 		}
-		
-		message.reply(`casts ${spellName} targeting ${args[1]}`);
+
+		colorRole = target.hp - spell.damage < 25 ? "Red"
+				  : target.hp - spell.damage <=50 ? "Yellow"
+				  : "Green";
+
+		swapRoles(targetMember, ["Red", "Yellow", "Green"], colorRole);
+		message.reply(`casts ${spellName} targeting ${args[1]}, they only have ${target.hp - spell.damage}hp`);
+
+		const updateDoc = {
+			$set: {
+				hp: target.hp - spell.damage,
+			}
+		}
+		await users.updateOne({
+			dsId: targetDs.id
+		}, updateDoc, {});
 	}
 }
