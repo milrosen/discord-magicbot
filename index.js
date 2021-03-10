@@ -19,6 +19,7 @@ run();
 const Discord = require('discord.js');
 const disClient = new Discord.Client();
 disClient.commands = new Discord.Collection();
+disClient.reviveTimers = new Discord.Collection(); 
 
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
