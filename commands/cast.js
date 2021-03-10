@@ -1,4 +1,5 @@
 const spellJSON = require('./info/spellinfo.json');
+const {swapRoles} = require('../roleHelper.js')
 
 const insertFromId = async (id, users) => {
 	const user = await users.findOne({
@@ -6,7 +7,7 @@ const insertFromId = async (id, users) => {
 	}, {});
 	const defaultUser = {
 		dsId: id,
-		health: 100,
+		hp: 100,
 		mp: 0,
 		dead: false,
 	}
@@ -55,7 +56,7 @@ module.exports = {
 	name: 'cast',
 	description: 'casts a spell',
 	async execute(message, args, db) {
-		//console.log(message.member.roles.cache);
+		if (message.member.roles.cache.has('dead')) return;
 		const spellName = args[0];
 
 		if (!(spellName in spellJSON || !spellName)) return message.channel.send(`Hey! @${message.author.username} ! Try casting a spell that exists nextime, wiseguy, use the \`!info\` command to see our availible spells, ok bub!`);
@@ -72,8 +73,9 @@ module.exports = {
 
 		if (caster.mp < spell.cost) return message.reply(`${spellName} costs ${spell.cost}mp and you only have ${caster.mp}mp. HAHA ***broke!***`);
 
-
-		if (target.hp < (typeof spell.damage === 'number' ? spell.damage : 0)) {
+		const targetMember = message.mentions.members.first();
+		
+		if (typeof spell.damage === 'number' && target.hp <= spell.damage) {
 			const updateDoc = {
 				$set: {
 					dead: true,
@@ -83,11 +85,10 @@ module.exports = {
 			await users.updateOne({
 				dsId: targetDs.id
 			}, updateDoc, {});
-			message.channel.send(generateFunnyDeathMessage(message.author.username, targetDs.username, spellName));
+			swapRoles(targetMember, ["Red", "Yellow", "Green"], "Dead");
+			return message.reply(generateFunnyDeathMessage(message.author.username, targetDs.username, spellName));
 		}
-		for (let i = 0; i < 100; i++) {
-			console.log(generateFunnyDeathMessage(message.author.username, targetDs.username, spellName));
-		}
+		
 		message.reply(`casts ${spellName} targeting ${args[1]}`);
 	}
 }
